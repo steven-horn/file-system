@@ -1,7 +1,5 @@
 #include "bitmap.h"
 
-const int BITMAP_SIZE = 
-
 int
 bitmap_get(unsigned char *bitmap, int pos)
 {

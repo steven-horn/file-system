@@ -1,4 +1,3 @@
-
 #define _GNU_SOURCE
 #include <string.h>
 
@@ -18,8 +17,14 @@
 const int NUFS_SIZE  = 1024 * 1024; // 1MB
 const int PAGE_COUNT = 256;
 
+// 254 data blocks (starts 2 pages in)
+// 400 inodes (start 702 bytes in)
+// inode bitmap starts 48 bytes in
+// data block bitmap starts 448 bytes in
+
 static int   pages_fd   = -1;
 static void* pages_base =  0;
+static super* super_block;
 
 void
 pages_init(const char* path)
@@ -32,6 +37,18 @@ pages_init(const char* path)
 
     pages_base = mmap(0, NUFS_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, pages_fd, 0);
     assert(pages_base != MAP_FAILED);
+
+    memset(inode_bitmap, 0, INODE_COUNT + DATA_BLOCK_COUNT);
+
+    super_block = (super*)pages_base;
+    super_block->imap = (unsigned char*)(pages_base + sizeof(super));
+    super_block->imap_size = 254;
+    super_block->dmap = (unsigned char*)(pages_base + sizeof(super) + super_block->imap_size));
+    super_block->dmap_size = 254;
+    super_block->num_inodes = 254;
+    super_block->num_blocks = 254;
+    super_block->inodes = (inode*)(((void*)dmap) + super_block->num_blocks);
+    super_block->blocks = pages_base + 8192;
 }
 
 void
@@ -50,21 +67,19 @@ pages_get_page(int pnum)
 inode*
 pages_get_node(int node_id)
 {
-    inode* idx = (inode*) pages_get_page(0);
-    return &(idx[pnum]);
+    return super_block->inodes + node_id;
 }
 
 int
-pages_find_empty()
+pages_find_empty_inode()
 {
-    int pnum = -1;
-    for (int ii = 2; ii < PAGE_COUNT; ++ii) {
-        if (0) { // if page is empty
-            pnum = ii;
-            break;
-        }
-    }
-    return pnum;
+    return bitmap_find_empty(super_block->imap, super_block->imap_size);
+}
+
+int
+pages_find_empty_data_block()
+{
+    return bitmap_find_empty(super_block->dmap, super_block->dmap_size);
 }
 
 void
@@ -79,4 +94,17 @@ print_node(inode* node)
     }
 }
 
-
+inode*
+pages_get_node_from_path(const char* path)
+{
+    path = path[1];
+    inode* n;
+    for (int i = 0; i < super_block->num_inodes; i++) {
+	n = pages_get_node(i);
+	if (strcmp(path, n->name) == 0) {
+	    return n;
+	}
+     }
+     return -1;
+}
+}
