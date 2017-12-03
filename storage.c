@@ -16,7 +16,6 @@ typedef struct file_data {
 void
 storage_init(const char* path)
 {
-    printf("TODO: Store file system data in: %s\n", path);
     pages_init(path);
 }
 
@@ -102,8 +101,8 @@ storage_rename(const char* from, const char* to)
     return pages_rename(from, to);
 }
 
-int
-storage_readdir(void* buf, fuse_fill_dir_t filler)
+slist*
+storage_get_names(const char* path)
 {
-    return pages_readdir(buf, filler);
+    return pages_get_names(path);
 }

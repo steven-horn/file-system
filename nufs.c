@@ -23,6 +23,8 @@ nufs_getattr(const char *path, struct stat *st)
 {
     printf("getattr(%s)\n", path);
     int rv = get_stat(path, st);
+    printf("st->st_uid = %d, st->st_mode = %d, st->st_size = %ld\n",
+            st->st_uid, st->st_mode, st->st_size);
     if (rv == -1) {
         return -ENOENT;
     }
@@ -62,7 +64,17 @@ nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // it will return non-zero when the buffer is full
     filler(buf, ".", &st, 0);
 
-    return storage_readdir(buf, filler);    
+    slist* names = storage_get_names(path);
+    while (1) {
+        if (names->data == NULL) {
+            break;
+        }
+        char* slash = "/";
+        strlcat(slash, names->data, 50);
+        get_stat(slash, &st);
+        filler(buf, names->data, &st, 0);
+    }
+    return 0;
 }
 
 // mknod makes a filesystem object like a file or directory

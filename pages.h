@@ -5,6 +5,7 @@
 #include <fuse.h>
 
 #include "bitmap.h"
+#include "slist.h"
 
 typedef struct inode {
     int refs; // reference count
@@ -36,6 +37,6 @@ int    pages_get_node_from_path(const char* path);
 int    pages_create(const char* path, int mode);
 int    pages_delete(const char* path);
 int    pages_rename(const char* from, const char* to);
-int    pages_readdir(void* buf, fuse_fill_dir_t filler);
+slist* pages_get_names(const char* path);
 
 #endif
