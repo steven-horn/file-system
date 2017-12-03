@@ -26,7 +26,11 @@ streq(const char* aa, const char* bb)
 static file_data*
 get_file_data(const char* path) 
 {
-    inode* node = pages_get_node_from_path(path);
+    int n = pages_get_node_from_path(path);
+    inode* node = pages_get_node(n);
+    if (node == -1) {
+        return null;
+    }
     file_data* fdata = malloc(sizeof(file_data));
     fdata->path = path;
     fdata->mode = node->mode;
@@ -51,6 +55,7 @@ get_stat(const char* path, struct stat* st)
     else {
         st->st_size = 0;
     }
+    free(dat);
     return 0;
 }
 
@@ -61,7 +66,41 @@ get_data(const char* path)
     if (!dat) {
         return 0;
     }
-
     return dat->data;
 }
 
+int
+storage_create(const char* path, int mode)
+{
+    if (strlen(path) > 48) {
+        return -ENAMETOOLONG;
+    }
+
+    return pages_create(path, mode);
+}
+
+int
+storage_delete(const char* path)
+{
+    if (strlen(path) > 48) {
+        return -ENAMETOOLONG;
+    }
+
+    return pages_delete(path);
+}
+
+int
+storage_rename(const char* from, cost char* to)
+{
+    if (strlen(from) > 48 || strlen(to) > 48) {
+        return -ENAMETOOLONG;
+    }
+
+    return pages_rename(from, to);
+}
+
+int
+storage_readdir(void* buf, fuse_fill_dir_t filler)
+{
+    return pages_readdir(buf, filler);
+}
