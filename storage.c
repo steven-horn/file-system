@@ -106,3 +106,13 @@ storage_get_names(const char* path)
 {
     return pages_get_names(path);
 }
+
+int
+storage_trunc(const char* path, off_t size) 
+{
+    if (strlen(path) > 48) {
+        return -ENAMETOOLONG;
+    }
+    
+    return pages_trunc(path, size);
+}

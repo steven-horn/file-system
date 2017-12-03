@@ -140,7 +140,6 @@ pages_create(const char* path, int mode)
     strncpy(node->name, p, 48);
     node->refs = 1;
     node->mode = mode;
-    node->size = 0;
 
     if (mode / 1000 == 010) {
         node->num_blocks = 1;
@@ -148,10 +147,12 @@ pages_create(const char* path, int mode)
         void* block = pages_get_page(b);
         bitmap_set(super_block->dmap, b);
         node->block = block;
+        node->size = 4096;
     }
     else {
         node->num_blocks = 0;
         node->block = NULL;
+        node->size = 0;
     }
     directory_put_ent(*root, p, n);
     return 0;
@@ -202,4 +203,76 @@ slist*
 pages_get_names(const char* path)
 {
     return directory_list(path);
+}
+
+int
+pages_trunc(const char* path, off_t size)
+{
+    int n = pages_get_node_from_path(path);
+    if (n == -1) {
+        return -ENOENT;
+    }
+
+    inode* node = pages_get_node(path);
+
+    if (node->size < size) {
+        int numBlocks = (size / 4096) + 1;
+        int b = (node->block - super_block->blocks) / 4096;
+        int n = 0;
+        for (int ii = 1; ii < numBlocks; ++ii) {
+            if (bitmap_get(super_block->dmap, b + ii) == 1) {
+                n = 1;
+            }
+        }
+        if (n = 0) {
+            for (int ii = 1; ii < numBlocks; ++ii) {
+                bitmap_set(super_block->dmap, b + ii);
+            }
+            node->size = size;
+            node->num_blocks = numBlocks;
+        }
+        else {
+            void* block;
+            int rv = pages_get_blocks(numBlocks, block);
+            if (rv == -1) {
+                return -1;
+            }
+            node->size = size;
+            node->blocks = block;
+            node->num_blocks = numBlocks;
+        }
+    }
+    else {
+        node->size = size;
+    } 
+    return 0;
+}
+
+int
+pages_get_blocks(int num, void* block)
+{
+    int b = 1;
+    int n = 0;
+    for (int ii = 0; ii < super_block->num_blocks; ++ii) {
+        if (n == num) {
+            return 0;
+        }
+        else if (b == 0) {
+            if (bitmap_get(super_block->dmap, ii) == 0) {
+                n++;
+            }
+            else {
+                b = 1;
+                n = 0;
+            }
+        }
+        else {
+            if (bitmap_get(super_block->dmap, ii) == 0) {
+                n++;
+                b = 0;
+                block = pages_get_page(ii);
+            }
+        }
+    }
+    return -1;
 }

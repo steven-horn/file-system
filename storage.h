@@ -14,6 +14,7 @@ int         storage_create(const char* path, int mode);
 int         storage_delete(const char* path);
 int         storage_rename(const char* from, const char* to);
 int         storage_readdir(void* buf, fuse_fill_dir_t filler);
+int         storage_trunc(const char* path, off_t size);
 slist*      storage_get_names(const char* path);
 
 #endif
