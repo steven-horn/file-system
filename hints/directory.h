@@ -9,14 +9,12 @@
 
 typedef struct dirent {
     char   name[48];
-    int    pnum;
-    pnode* node;
+    inode* node;
 } dirent;
 
 typedef struct directory {
-    int     pnum;
     dirent* ents;
-    pnode*  node;
+    inode*  node;
 } directory;
 
 void directory_init();

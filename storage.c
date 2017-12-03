@@ -1,20 +1,14 @@
-
 #include <stdio.h>
 #include <string.h>
 
 #include "storage.h"
+#include "pages.h"
 
 typedef struct file_data {
     const char* path;
     int         mode;
     const char* data;
 } file_data;
-
-static file_data file_table[] = {
-    {"/", 040755, 0},
-    {"/hello.txt", 0100644, "hello\n"},
-    {0, 0, 0},
-};
 
 void
 storage_init(const char* path)
@@ -30,20 +24,14 @@ streq(const char* aa, const char* bb)
 }
 
 static file_data*
-get_file_data(const char* path) {
-    for (int ii = 0; 1; ++ii) {
-        file_data row = file_table[ii];
-
-        if (file_table[ii].path == 0) {
-            break;
-        }
-
-        if (streq(path, file_table[ii].path)) {
-            return &(file_table[ii]);
-        }
-    }
-
-    return 0;
+get_file_data(const char* path) 
+{
+    inode* node = pages_get_node_from_path(path);
+    file_data* fdata = malloc(sizeof(file_data));
+    fdata->path = path;
+    fdata->mode = node->mode;
+    fdata->data = (const char*)block;
+    return fdata;
 }
 
 int
