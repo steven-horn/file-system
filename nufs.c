@@ -5,8 +5,9 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <bsd/string.h>
+#include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
@@ -15,6 +16,21 @@
 
 
 // implementation for: man 2 access
+// implementation for: man 2 stat
+// gets an object's attributes (type, permissions, size, etc)
+int
+nufs_getattr(const char *path, struct stat *st)
+{
+    printf("getattr(%s)\n", path);
+    int rv = get_stat(path, st);
+    if (rv == -1) {
+        return -ENOENT;
+    }
+    else {
+        return 0;
+    }
+}
+
 // Checks if a file exists.
 int
 nufs_access(const char *path, int mask)
@@ -29,21 +45,6 @@ nufs_access(const char *path, int mask)
     }
     free(st);
     return 0;
-}
-
-// implementation for: man 2 stat
-// gets an object's attributes (type, permissions, size, etc)
-int
-nufs_getattr(const char *path, struct stat *st)
-{
-    printf("getattr(%s)\n", path);
-    int rv = get_stat(path, st);
-    if (rv == -1) {
-        return -ENOENT;
-    }
-    else {
-        return 0;
-    }
 }
 
 // implementation for: man 2 readdir
@@ -141,7 +142,7 @@ nufs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_fi
         len = size;
     }
 
-    strlcpy(buf, data, len);
+    strncpy(buf, data, len);
     return len;
 }
 

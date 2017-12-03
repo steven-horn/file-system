@@ -27,7 +27,7 @@ bitmap_reset(unsigned char *bitmap, int pos)
     *a &= ~(1 << pos);
 }
 
-void
+int
 bitmap_get_empty(unsigned char *bitmap, int size)
 {
     for (int i = 0; i < size; i++) {
