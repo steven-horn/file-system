@@ -5,7 +5,7 @@
 #include <errno.h>
 
 #include "storage.h"
-#include "hints/pages.h"
+#include "pages.h"
 
 typedef struct file_data {
     const char* path;
@@ -93,7 +93,7 @@ storage_delete(const char* path)
 }
 
 int
-storage_rename(const char* from, cost char* to)
+storage_rename(const char* from, const char* to)
 {
     if (strlen(from) > 48 || strlen(to) > 48) {
         return -ENAMETOOLONG;

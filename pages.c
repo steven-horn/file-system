@@ -34,17 +34,17 @@ pages_init(const char* path)
     pages_base = mmap(0, NUFS_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, pages_fd, 0);
     assert(pages_base != MAP_FAILED);
 
-    memset(inode_bitmap, 0, INODE_COUNT + DATA_BLOCK_COUNT);
-
     super_block = (super*)pages_base;
     super_block->imap = (unsigned char*)(pages_base + sizeof(super));
     super_block->imap_size = 254;
-    super_block->dmap = (unsigned char*)(pages_base + sizeof(super) + super_block->imap_size));
+    super_block->dmap = (unsigned char*)(pages_base + sizeof(super) + super_block->imap_size);
     super_block->dmap_size = 254;
     super_block->num_inodes = 254;
     super_block->num_blocks = 254;
-    super_block->inodes = (inode*)(((void*)dmap) + super_block->num_blocks);
+    super_block->inodes = (inode*) (super_block->dmap + super_block->num_blocks);
     super_block->blocks = pages_base + 8192;
+
+    memset(super_block->imap, 0, super_block->num_inodes + super_block->num_blocks);
 }
 
 void
@@ -69,21 +69,21 @@ pages_get_node(int node_id)
 int
 pages_find_empty_inode()
 {
-    return bitmap_find_empty(super_block->imap, super_block->imap_size);
+    return bitmap_get_empty(super_block->imap, super_block->imap_size);
 }
 
 int
 pages_find_empty_data_block()
 {
-    return bitmap_find_empty(super_block->dmap, super_block->dmap_size);
+    return bitmap_get_empty(super_block->dmap, super_block->dmap_size);
 }
 
 void
 print_node(inode* node)
 {
     if (node) {
-        printf("node{refs: %d, mode: %04o, size: %d, xtra: %d}\n",
-               node->refs, node->mode, node->size, node->xtra);
+        printf("node{refs: %d, mode: %04o, size: %d}\n",
+               node->refs, node->mode, node->size);
     }
     else {
         printf("node{null}\n");
@@ -93,19 +93,19 @@ print_node(inode* node)
 int
 pages_get_node_from_path(const char* path)
 {
-    path = path[1];
+    path++;
     inode* n;
     for (int i = 0; i < super_block->num_inodes; i++) {
-	n = pages_get_node(i);
-	if (strcmp(path, n->name) == 0) {
-	    return i;
-	}
+	    n = pages_get_node(i);
+	    if (strcmp(path, n->name) == 0) {
+	        return i;
+	    }
     }
     return -1;
 }
 
 int
-pages_create(path, mode)
+pages_create(const char* path, int mode)
 {
     int n = pages_find_empty_inode();
     if (n == -1) {
@@ -116,8 +116,8 @@ pages_create(path, mode)
 
     inode* node = pages_get_node(n);
 
-    const char* p = path[1];
-    node->name = p;
+    const char* p = path + 1;
+    strncpy(node->name, p, 48);
     node->refs = 1;
     node->mode = mode;
 
@@ -126,12 +126,12 @@ pages_create(path, mode)
         int b = pages_find_empty_data_block();
         void* block = pages_get_page(b);
         bitmap_set(super_block->dmap, b);
-        node->data = block;
+        node->block = block;
         node->size = 4096;
     }
     else {
         node->num_blocks = 0;
-        node->data = NULL;
+        node->block = NULL;
         node->size = 0;
     }
 }
@@ -170,8 +170,8 @@ pages_rename(const char* from, const char* to)
     
     inode* node = pages_get_node(n);
 
-    const char* t = to[1];
-    node->name = t;
+    const char* t = to + 1;
+    strncpy(node->name, t, 48);
 
     return 0;
 }

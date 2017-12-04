@@ -2,6 +2,7 @@
 #define PAGES_H
 
 #include <stdio.h>
+#include <fuse.h>
 
 #include "bitmap.h"
 
@@ -30,7 +31,7 @@ void   pages_free();
 void*  pages_get_page(int pnum);
 inode* pages_get_node(int node_id);
 int    pages_find_empty();
-void   print_node(pnode* node);
+void   print_node(inode* node);
 int    pages_get_node_from_path(const char* path);
 int    pages_create(const char* path, int mode);
 int    pages_delete(const char* path);
