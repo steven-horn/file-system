@@ -36,5 +36,7 @@ int    pages_create(const char* path, int mode);
 int    pages_delete(const char* path);
 int    pages_rename(const char* from, const char* to);
 int    pages_readdir(void* buf, fuse_fill_dir_t filler);
+int    pages_trunc(const char* path, off_t size);
+void*  pages_get_blocks(int num);
 
 #endif

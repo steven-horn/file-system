@@ -107,3 +107,13 @@ storage_readdir(void* buf, fuse_fill_dir_t filler)
 {
     return pages_readdir(buf, filler);
 }
+
+int
+storage_trunc(const char* path, off_t size) 
+{
+    if (strlen(path) > 48) {
+        return -ENAMETOOLONG;
+    }
+    
+    return pages_trunc(path, size);
+}

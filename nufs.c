@@ -117,7 +117,7 @@ int
 nufs_truncate(const char *path, off_t size)
 {
     printf("truncate(%s, %ld bytes)\n", path, size);
-    return -1;
+    return storage_trunc(path, size);
 }
 
 // this is called on open, but doesn't need to do much
