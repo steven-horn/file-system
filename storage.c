@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <string.h>
+#include <fuse.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #include "storage.h"
-#include "pages.h"
+#include "hints/pages.h"
 
 typedef struct file_data {
     const char* path;
@@ -28,13 +31,13 @@ get_file_data(const char* path)
 {
     int n = pages_get_node_from_path(path);
     inode* node = pages_get_node(n);
-    if (node == -1) {
-        return null;
+    if (n == -1) {
+        return NULL;
     }
     file_data* fdata = malloc(sizeof(file_data));
     fdata->path = path;
     fdata->mode = node->mode;
-    fdata->data = (const char*)block;
+    fdata->data = (const char*)node->block;
     return fdata;
 }
 

@@ -1,4 +1,4 @@
-#include "bitmap.h"
+#include "bitmap.h" 
 
 int
 bitmap_get(unsigned char *bitmap, int pos)
@@ -27,10 +27,10 @@ bitmap_reset(unsigned char *bitmap, int pos)
     *a &= ~(1 << pos);
 }
 
-void
-bitmap_get_empty(unsigned char *bitmap)
+int
+bitmap_get_empty(unsigned char *bitmap, int size)
 {
-    for (int i = 0; i < BITMAP_SIZE; i++) {
+    for (int i = 0; i < size; i++) {
         if (!bitmap_get(bitmap, i)) {
             return i;
         }
