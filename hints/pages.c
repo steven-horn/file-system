@@ -13,14 +13,10 @@
 #include "pages.h"
 #include "slist.h"
 #include "util.h"
+#include "storage.h"
 
 const int NUFS_SIZE  = 1024 * 1024; // 1MB
 const int PAGE_COUNT = 256;
-
-// 254 data blocks (starts 2 pages in)
-// 400 inodes (start 702 bytes in)
-// inode bitmap starts 48 bytes in
-// data block bitmap starts 448 bytes in
 
 static int   pages_fd   = -1;
 static void* pages_base =  0;
@@ -61,7 +57,7 @@ pages_free()
 void*
 pages_get_page(int pnum)
 {
-    return pages_base + 4096 * pnum;
+    return super_block->blocks + 4096 * pnum;
 }
 
 inode*
@@ -94,7 +90,7 @@ print_node(inode* node)
     }
 }
 
-inode*
+int
 pages_get_node_from_path(const char* path)
 {
     path = path[1];
@@ -102,9 +98,96 @@ pages_get_node_from_path(const char* path)
     for (int i = 0; i < super_block->num_inodes; i++) {
 	n = pages_get_node(i);
 	if (strcmp(path, n->name) == 0) {
-	    return n;
+	    return i;
 	}
-     }
-     return -1;
+    }
+    return -1;
 }
+
+int
+pages_create(path, mode)
+{
+    int n = pages_find_empty_inode();
+    if (n == -1) {
+        return -EDQUOT;
+    }
+
+    bitmap_set(super_block->imap, n);
+
+    inode* node = pages_get_node(n);
+
+    const char* p = path[1];
+    node->name = p;
+    node->refs = 1;
+    node->mode = mode;
+    node->size = 0;
+
+    if (mode / 1000 == 010) {
+        node->num_blocks = 1;
+        int b = pages_find_empty_data_block();
+        void* block = pages_get_page(b);
+        bitmap_set(super_block->dmap, b);
+        node->data = block;
+    }
+    else {
+        node->num_blocks = 0;
+        node->data = NULL;
+    }
+}
+
+int
+pages_delete(const char* path)
+{
+    int n = pages_get_node_from_path(path);
+    if (n == -1) {
+        return -ENOENT;
+    }
+
+    inode* node = pages_get_node(n);
+
+    if (node->num_blocks > 0) {
+        int b = (node->block - super_block->blocks) / 4096;
+        bitmap_set(super_block->dmap, b);
+    }
+    bitmap_set(super_block->imap, n);
+
+    return 0;
+}
+
+int
+pages_rename(const char* from, const char* to)
+{
+    int n = pages_get_node_from_path(from);
+    if (n == -1) {
+        return -ENOENT;
+    }
+
+    int nn = pages_get_node_from_path(to);
+    if (n != -1) {
+        pages_delete(to);
+    }
+    
+    inode* node = pages_get_node(n);
+
+    const char* t = to[1];
+    node->name = t;
+
+    return 0;
+}
+
+int
+pages_readdir(void* buf, fuse_fill_dir_t filler)
+{
+    struct stat st;
+    inode* node;
+
+    for (int ii = 0; ii < super_block->num_inodes; ++ii) {
+        if (bitmap_get(super_block->imap, ii) == 1) {
+            node = pages_get_node(ii);
+            char* n = "/";
+            strncat(n, node->name, 40);
+            get_stat(n, &st);
+            filler(buf, ".", &st, 0);
+        }
+    }
 }

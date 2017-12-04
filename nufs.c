@@ -20,6 +20,14 @@ int
 nufs_access(const char *path, int mask)
 {
     printf("access(%s, %04o)\n", path, mask);
+    struct stat* st = malloc(sizeof(stat));
+    if (mask == F_OK) {
+        int rv = nufs_getattr(path, st);
+        if (rv == -ENOENT) {
+            return -ENOENT;
+        }
+    }
+    free(st);
     return 0;
 }
 
@@ -53,10 +61,7 @@ nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // it will return non-zero when the buffer is full
     filler(buf, ".", &st, 0);
 
-    get_stat("/hello.txt", &st);
-    filler(buf, "hello.txt", &st, 0);
-
-    return 0;
+    return storage_readdir(buf, filler);    
 }
 
 // mknod makes a filesystem object like a file or directory
@@ -65,7 +70,7 @@ int
 nufs_mknod(const char *path, mode_t mode, dev_t rdev)
 {
     printf("mknod(%s, %04o)\n", path, mode);
-    return -1;
+    return storage_create(path, mode);
 }
 
 // most of the following callbacks implement
@@ -81,7 +86,7 @@ int
 nufs_unlink(const char *path)
 {
     printf("unlink(%s)\n", path);
-    return -1;
+    return storage_delete(path);
 }
 
 int
@@ -97,7 +102,7 @@ int
 nufs_rename(const char *from, const char *to)
 {
     printf("rename(%s => %s)\n", from, to);
-    return -1;
+    return storage_rename(from, to);
 }
 
 int
