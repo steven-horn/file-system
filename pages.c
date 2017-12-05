@@ -98,8 +98,9 @@ void
 print_node(inode* node)
 {
     if (node) {
-        printf("node{refs: %d, mode: %04o, size: %d}\n",
-               node->refs, node->mode, node->size);
+        printf("node{refs: %d, mode: %04o, size: %d, block: %ld, num_blocks: %d, name: %s}\n",
+               node->refs, node->mode, node->size, (long) node->block,
+               node->num_blocks, node->name);
     }
     else {
         printf("node{null}\n");
@@ -141,20 +142,15 @@ pages_create(const char* path, int mode)
     node->refs = 1;
     node->mode = mode;
 
-    if (mode / 1000 == 010) {
-        node->num_blocks = 1;
-        int b = pages_find_empty_data_block();
-        void* block = pages_get_page(b);
-        bitmap_set(super_block->dmap, b);
-        node->block = block;
-        node->size = 4096;
-    }
-    else {
-        node->num_blocks = 0;
-        node->block = NULL;
-        node->size = 0;
-    }
-    directory_put_ent(*root, p, n);
+    node->num_blocks = 1;
+    int b = pages_find_empty_data_block();
+    void* block = pages_get_page(b);
+    bitmap_set(super_block->dmap, b);
+    node->block = block;
+    node->size = 0;
+    
+    directory_put_ent(root, p, n);
+    print_node(node);
     return 0;
 }
 
@@ -202,6 +198,8 @@ pages_rename(const char* from, const char* to)
 slist*
 pages_get_names(const char* path)
 {
+    //directory dd = directory_from_path(path);
+    //print_directory(dd);
     return directory_list(path);
 }
 
@@ -286,12 +284,13 @@ pages_write(const char* path, const char* buf, size_t size, off_t offset)
     }
 
     inode* node = pages_get_node(n);
-
     char* dat = (char*)node->block;
-
-    dat += offset;
-
-    strlcat(dat, buf, size);
-
-    return 0;
+    dat += offset + node->size;
+    
+    strlcpy(dat, buf, size + 1);
+    *(dat + size) = '\0';
+    node->size += strlen(dat - offset);
+    print_node(node);
+    printf("Returning %lu\n", size);
+    return size;
 }
