@@ -35,13 +35,13 @@ directory_from_path(const char* path)
 }
 
 int
-directory_put_ent(directory dd, const char* name, int pnum)
+directory_put_ent(directory* dd, const char* name, int pnum)
 {
     dirent* ent = malloc(sizeof(dirent));
     strlcpy(ent->name, name, 50);
     ent->node = pages_get_node(pnum);
-    dd.ents[dd.num_ents] = *ent;
-    dd.num_ents++;
+    dd->ents[dd->num_ents] = *ent;
+    dd->num_ents++;
 }
 
 int

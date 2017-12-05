@@ -14,7 +14,6 @@
 
 #include "storage.h"
 
-// implementation for: man 2 access
 // implementation for: man 2 stat
 // gets an object's attributes (type, permissions, size, etc)
 int
@@ -25,6 +24,7 @@ nufs_getattr(const char *path, struct stat *st)
     printf("st->st_uid = %d, st->st_mode = %d, st->st_size = %ld\n",
             st->st_uid, st->st_mode, st->st_size);
     if (rv == -1) {
+        printf("Returning ENOENT\n");
         return -ENOENT;
     }
     else {
@@ -32,6 +32,7 @@ nufs_getattr(const char *path, struct stat *st)
     }
 }
 
+// implementation for: man 2 access
 // Checks if a file exists.
 int
 nufs_access(const char *path, int mask)
@@ -41,6 +42,7 @@ nufs_access(const char *path, int mask)
     if (mask == F_OK) {
         int rv = nufs_getattr(path, st);
         if (rv == -ENOENT) {
+            printf("Returning ENOENT\n");
             return -ENOENT;
         }
     }
@@ -69,10 +71,12 @@ nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
             break;
         }
         char* slash = "/";
-        strlcat(slash, names->data, 50);
+        char* name = strdup(names->data);
+        strlcat(slash, name, 50);
         get_stat(slash, &st);
         filler(buf, names->data, &st, 0);
     }
+    s_free(names);
     return 0;
 }
 
