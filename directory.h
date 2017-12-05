@@ -13,8 +13,9 @@ typedef struct dirent {
 } dirent;
 
 typedef struct directory {
-    dirent* ents;
-    inode*  node;
+    dirent ents[50];
+    int num_ents;
+    inode* node;
 } directory;
 
 void directory_init();
