@@ -14,7 +14,6 @@
 
 #include "storage.h"
 
-
 // implementation for: man 2 access
 // implementation for: man 2 stat
 // gets an object's attributes (type, permissions, size, etc)
@@ -23,6 +22,8 @@ nufs_getattr(const char *path, struct stat *st)
 {
     printf("getattr(%s)\n", path);
     int rv = get_stat(path, st);
+    printf("st->st_uid = %d, st->st_mode = %d, st->st_size = %ld\n",
+            st->st_uid, st->st_mode, st->st_size);
     if (rv == -1) {
         return -ENOENT;
     }
@@ -62,7 +63,17 @@ nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // it will return non-zero when the buffer is full
     filler(buf, ".", &st, 0);
 
-    return storage_readdir(buf, filler);    
+    slist* names = storage_get_names(path);
+    while (1) {
+        if (names->data == NULL) {
+            break;
+        }
+        char* slash = "/";
+        strlcat(slash, names->data, 50);
+        get_stat(slash, &st);
+        filler(buf, names->data, &st, 0);
+    }
+    return 0;
 }
 
 // mknod makes a filesystem object like a file or directory
@@ -135,7 +146,11 @@ int
 nufs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
     printf("read(%s, %ld bytes, @%ld)\n", path, size, offset);
-    const char* data = get_data(path);
+    const char* data;
+    int rv = get_data(path, data);
+    if (rv == -1) {
+        return -ENOENT;
+    }
 
     int len = strlen(data) + 1;
     if (size < len) {
@@ -151,7 +166,7 @@ int
 nufs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
     printf("write(%s, %ld bytes, @%ld)\n", path, size, offset);
-    return -1;
+    return storage_write(path, buf, size, offset);
 }
 
 // Update the timestamps on a file or directory.

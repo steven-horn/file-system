@@ -102,10 +102,10 @@ storage_rename(const char* from, const char* to)
     return pages_rename(from, to);
 }
 
-int
-storage_readdir(void* buf, fuse_fill_dir_t filler)
+slist*
+storage_get_names(const char* path)
 {
-    return pages_readdir(buf, filler);
+    return pages_get_names(path);
 }
 
 int
@@ -116,4 +116,14 @@ storage_trunc(const char* path, off_t size)
     }
     
     return pages_trunc(path, size);
+}
+
+int
+storage_write(const char* path, const char* buf, size_t size, off_t offset)
+{
+    if (strlen(path) > 48) {
+        return -ENAMETOOLONG;
+    }
+
+    return pages_write(path, buf, size, offset);
 }
