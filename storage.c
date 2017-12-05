@@ -16,7 +16,6 @@ typedef struct file_data {
 void
 storage_init(const char* path)
 {
-    printf("TODO: Store file system data in: %s\n", path);
     pages_init(path);
 }
 
@@ -62,14 +61,15 @@ get_stat(const char* path, struct stat* st)
     return 0;
 }
 
-const char*
-get_data(const char* path)
+int
+get_data(const char* path, const char* data)
 {
     file_data* dat = get_file_data(path);
     if (!dat) {
-        return 0;
+        return -1;
     }
-    return dat->data;
+    data = dat->data;
+    return 0;
 }
 
 int

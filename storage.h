@@ -7,7 +7,7 @@
 
 void        storage_init(const char* path);
 int         get_stat(const char* path, struct stat* st);
-const char* get_data(const char* path);
+int         get_data(const char* path, const char* data);
 int         storage_create(const char* path, int mode);
 int         storage_delete(const char* path);
 int         storage_rename(const char* from, const char* to);

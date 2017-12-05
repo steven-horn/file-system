@@ -25,6 +25,7 @@ static super* super_block;
 void
 pages_init(const char* path)
 {
+    printf("BEGINNING OF PAGES_INIT");
     pages_fd = open(path, O_CREAT | O_RDWR, 0644);
     assert(pages_fd != -1);
 
@@ -45,6 +46,7 @@ pages_init(const char* path)
     super_block->blocks = pages_base + 8192;
 
     memset(super_block->imap, 0, super_block->num_inodes + super_block->num_blocks);
+    printf("END OF PAGES_INIT");
 }
 
 void
@@ -226,7 +228,7 @@ pages_trunc(const char* path, off_t size)
                 return -1;
             }
             node->size = size;
-            node->blocks = block;
+            node->block = block;
             node->num_blocks = numBlocks;
         }
     }
