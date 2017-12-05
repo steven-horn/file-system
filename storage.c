@@ -61,14 +61,15 @@ get_stat(const char* path, struct stat* st)
     return 0;
 }
 
-const char*
-get_data(const char* path)
+int
+get_data(const char* path, const char* data)
 {
     file_data* dat = get_file_data(path);
     if (!dat) {
-        return 0;
+        return -1;
     }
-    return dat->data;
+    data = dat->data;
+    return 0;
 }
 
 int
@@ -115,4 +116,14 @@ storage_trunc(const char* path, off_t size)
     }
     
     return pages_trunc(path, size);
+}
+
+int
+storage_write(const char* path, const char* buf, size_t size, off_t offset)
+{
+    if (strlen(path) > 48) {
+        return -ENAMETOOLONG;
+    }
+
+    return pages_write(path, buf, size, offset);
 }

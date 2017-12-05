@@ -14,7 +14,6 @@
 
 #include "storage.h"
 
-
 // implementation for: man 2 access
 // implementation for: man 2 stat
 // gets an object's attributes (type, permissions, size, etc)
@@ -147,7 +146,11 @@ int
 nufs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
     printf("read(%s, %ld bytes, @%ld)\n", path, size, offset);
-    const char* data = get_data(path);
+    const char* data;
+    int rv = get_data(path, data);
+    if (rv == -1) {
+        return -ENOENT;
+    }
 
     int len = strlen(data) + 1;
     if (size < len) {
@@ -163,7 +166,7 @@ int
 nufs_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
     printf("write(%s, %ld bytes, @%ld)\n", path, size, offset);
-    return -1;
+    return storage_write(path, buf, size, offset);
 }
 
 // Update the timestamps on a file or directory.

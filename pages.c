@@ -213,7 +213,7 @@ pages_trunc(const char* path, off_t size)
         return -ENOENT;
     }
 
-    inode* node = pages_get_node(path);
+    inode* node = pages_get_node(n);
 
     if (node->size < size) {
         int numBlocks = (size / 4096) + 1;
@@ -238,7 +238,7 @@ pages_trunc(const char* path, off_t size)
                 return -1;
             }
             node->size = size;
-            node->blocks = block;
+            node->block = block;
             node->num_blocks = numBlocks;
         }
     }
@@ -275,4 +275,23 @@ pages_get_blocks(int num, void* block)
         }
     }
     return -1;
+}
+
+int
+pages_write(const char* path, const char* buf, size_t size, off_t offset)
+{
+    int n = pages_get_node_from_path(path);
+    if (n == -1) {
+        return -ENOENT;
+    }
+
+    inode* node = pages_get_node(n);
+
+    char* dat = (char*)node->block;
+
+    dat += offset;
+
+    strlcat(dat, buf, size);
+
+    return 0;
 }
